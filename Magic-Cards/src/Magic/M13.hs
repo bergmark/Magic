@@ -577,7 +577,12 @@ krakenHatchling = mkCard $ do
 
 -- Master of the Pearl Trident
 
--- Merfolk of the Pearl Trident
+merfolkOfThePearlTrident :: Card
+merfolkOfThePearlTrident = mkCard $ do
+  name =: Just "Merfolk of the Pearl Trident"
+  types =: creatureTypes [Merfolk]
+  play =: Just playObject { manaCost = Just [Just Blue] }
+  pt =: Just (1, 1)
 
 mindSculpt :: Card
 mindSculpt = mkCard $ do
