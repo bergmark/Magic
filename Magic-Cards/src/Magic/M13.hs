@@ -335,8 +335,8 @@ healerOfThePride = mkCard $ do
         | DidMoveObject _ (Some Battlefield, i) <- events ]
     gainLifeTrigger _ _ _ = return []
 
-intrepidHero :: Incomplete Card
-intrepidHero = Incomplete . mkCard $ do
+intrepidHero :: Card
+intrepidHero = mkCard $ do
     name =: Just "Intrepid Hero"
     types =: creatureTypes [Human, Soldier]
     pt =: Just (1, 1)
@@ -347,17 +347,11 @@ intrepidHero = Incomplete . mkCard $ do
       { abilityType = ActivatedAb
       , tapCost = TapCost
       , abilityActivation = defaultActivation
-        { effect = destroyGte4Creature
+        { effect =
+            destroyTargetPermanent $ \o ->
+              hasTypes creatureType o && maybe False (\(p, t) -> p >= 4) (_pt o)
         }
       }
-    destroyGte4Creature :: Contextual (Magic ())
-    destroyGte4Creature rSelf you = do
-      creature <- askTarget you (targetCreaturePowerGte 4)
-      mkTargetTrigger you creature $ \ref -> do
-        will (DestroyPermanent ref True)
-    targetCreaturePowerGte :: Int -> TargetSpec (ObjectRef TyPermanent)
-    targetCreaturePowerGte power = undefined
-    -- TODO: Destroy target creature with power 4 or greater.
 
 knightOfGlory :: Incomplete Card
 knightOfGlory = Incomplete . mkCard $ do
