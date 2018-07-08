@@ -229,12 +229,12 @@ divineFavor = mkCard $ do
 
 divineVerdict :: Incomplete Card
 divineVerdict = Incomplete . mkCard $ do
-  name =: Just "Divine Verdict"
-  types =: instantType
-  play =: Just playObject
-    { manaCost = Just [Nothing, Nothing, Nothing, Just White]
-    , effect = divineVerdictEffect
-    }
+    name =: Just "Divine Verdict"
+    types =: instantType
+    play =: Just playObject
+      { manaCost = Just [Nothing, Nothing, Nothing, Just White]
+      , effect = divineVerdictEffect
+      }
   where
     divineVerdictEffect :: Contextual (Magic ())
     divineVerdictEffect =
@@ -259,12 +259,12 @@ erase = mkCard $ do
 
 faith'sReward :: Incomplete Card
 faith'sReward = Incomplete . mkCard $ do
-  name =: Just "Faith's Reward"
-  types =: instantType
-  play =: Just playObject
-    { manaCost = Just [Nothing, Nothing, Nothing, Just White]
-    , effect = faith'sRewardEffect
-    }
+    name =: Just "Faith's Reward"
+    types =: instantType
+    play =: Just playObject
+      { manaCost = Just [Nothing, Nothing, Nothing, Just White]
+      , effect = faith'sRewardEffect
+      }
   where
     faith'sRewardEffect :: Contextual (Magic ())
     faith'sRewardEffect =
@@ -274,12 +274,12 @@ faith'sReward = Incomplete . mkCard $ do
 
 gloriousCharge :: Incomplete Card
 gloriousCharge = Incomplete . mkCard $ do
-  name =: Just "Glorious Charge"
-  types =: instantType
-  play =: Just playObject
-    { manaCost = Just [Nothing, Just White]
-    , effect = gloriousChargeEffect
-    }
+    name =: Just "Glorious Charge"
+    types =: instantType
+    play =: Just playObject
+      { manaCost = Just [Nothing, Just White]
+      , effect = gloriousChargeEffect
+      }
   where
     gloriousChargeEffect :: Contextual (Magic ())
     gloriousChargeEffect = undefined
@@ -287,12 +287,12 @@ gloriousCharge = Incomplete . mkCard $ do
 
 griffinProtector :: Card
 griffinProtector = mkCard $ do
-  name =: Just "Griffin Protector"
-  types =: creatureTypes [Griffin]
-  staticKeywordAbilities =: [Flying]
-  triggeredAbilities =: tempPlus1Trigger
-  pt =: Just (2, 3)
-  play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White] }
+    name =: Just "Griffin Protector"
+    types =: creatureTypes [Griffin]
+    staticKeywordAbilities =: [Flying]
+    triggeredAbilities =: tempPlus1Trigger
+    pt =: Just (2, 3)
+    play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White] }
   where
     tempPlus1Trigger = undefined
     -- Whenever another creature enters the battlefield under your
@@ -300,33 +300,27 @@ griffinProtector = mkCard $ do
 
 guardianLions :: Card
 guardianLions = mkCard $ do
-    name =: Just "Guardian Lions"
-    types =: creatureTypes [Cat]
-    pt =: Just (1, 6)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Nothing, Nothing, Nothing, Just White]
-    }
-    staticKeywordAbilities =: [Vigilance]
+  name =: Just "Guardian Lions"
+  types =: creatureTypes [Cat]
+  pt =: Just (1, 6)
+  play =: Just playObject { manaCost = Just $ replicate 4 Nothing ++ [Just White] }
+  staticKeywordAbilities =: [Vigilance]
 
 guardiansOfAkrasa :: Card
 guardiansOfAkrasa = mkCard $ do
-    name =: Just "Guardians of Akrasa"
-    types =: creatureTypes [Human, Soldier]
-    pt =: Just (0, 4)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Nothing, Just White]
-    }
-    staticKeywordAbilities =: [Defender]
-    triggeredAbilities =: exalted
+  name =: Just "Guardians of Akrasa"
+  types =: creatureTypes [Human, Soldier]
+  pt =: Just (0, 4)
+  play =: Just playObject { manaCost = Just [Nothing, Nothing, Just White] }
+  staticKeywordAbilities =: [Defender]
+  triggeredAbilities =: exalted
 
 healerOfThePride :: Card
 healerOfThePride = mkCard $ do
     name =: Just "Healer of the Pride"
     types =: creatureTypes [Cat, Cleric]
     pt =: Just (2, 3)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Nothing, Nothing, Just White]
-    }
+    play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White] }
     triggeredAbilities =: gainLifeTrigger
   where
     gainLifeTrigger :: TriggeredAbilities
@@ -343,11 +337,11 @@ healerOfThePride = mkCard $ do
 
 intrepidHero :: Incomplete Card
 intrepidHero = Incomplete . mkCard $ do
-  name =: Just "Intrepid Hero"
-  types =: creatureTypes [Human, Soldier]
-  pt =: Just (1, 1)
-  play =: Just playObject { manaCost = Just [Nothing, Nothing, Just White] }
-  activatedAbilities =: [intrepidHeroAbility]
+    name =: Just "Intrepid Hero"
+    types =: creatureTypes [Human, Soldier]
+    pt =: Just (1, 1)
+    play =: Just playObject { manaCost = Just [Nothing, Nothing, Just White] }
+    activatedAbilities =: [intrepidHeroAbility]
   where
     intrepidHeroAbility = ActivatedAbility
       { abilityType = ActivatedAb
@@ -357,7 +351,12 @@ intrepidHero = Incomplete . mkCard $ do
         }
       }
     destroyGte4Creature :: Contextual (Magic ())
-    destroyGte4Creature rSelf you = undefined
+    destroyGte4Creature rSelf you = do
+      creature <- askTarget you (targetCreaturePowerGte 4)
+      mkTargetTrigger you creature $ \ref -> do
+        will (DestroyPermanent ref True)
+    targetCreaturePowerGte :: Int -> TargetSpec (ObjectRef TyPermanent)
+    targetCreaturePowerGte power = undefined
     -- TODO: Destroy target creature with power 4 or greater.
 
 knightOfGlory :: Incomplete Card
@@ -389,26 +388,24 @@ pacifism = mkCard $ do
 
 pillarfieldOx :: Card
 pillarfieldOx = mkCard $ do
-    name =: Just "Pillarfield Ox"
-    types =: creatureTypes [Ox]
-    pt =: Just (2, 4)
-    play =: Just playObject {
-        manaCost = Just [Nothing, Nothing, Nothing, Just White]
-    }
+  name =: Just "Pillarfield Ox"
+  types =: creatureTypes [Ox]
+  pt =: Just (2, 4)
+  play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White] }
 
 planarCleansing :: Card
 planarCleansing = mkCard $ do
-     name =: Just "Planar Cleansing"
-     types =: sorceryType
-     play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White, Just White, Just White],
-         effect = stackSelf destroyAllPermanents }
-   where
-     destroyAllPermanents :: ObjectRef 'TyStackItem -> PlayerRef -> Magic ()
-     destroyAllPermanents _ _ = do
-        objects <- IdList.toList <$> view (asks battlefield)
-        let objectRefs = map (\pair -> (Battlefield, fst pair)) $ filter (not . hasTypes landType . get objectPart . snd) objects
-        let destructionEffects = map (`DestroyPermanent` true) objectRefs
-        void $ executeEffects $ map Will destructionEffects
+    name =: Just "Planar Cleansing"
+    types =: sorceryType
+    play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White, Just White, Just White],
+        effect = stackSelf destroyAllPermanents }
+  where
+    destroyAllPermanents :: ObjectRef 'TyStackItem -> PlayerRef -> Magic ()
+    destroyAllPermanents _ _ = do
+      objects <- IdList.toList <$> view (asks battlefield)
+      let objectRefs = map (\pair -> (Battlefield, fst pair)) $ filter (not . hasTypes landType . get objectPart . snd) objects
+      let destructionEffects = map (`DestroyPermanent` true) objectRefs
+      void $ executeEffects $ map Will destructionEffects
 
 -- Prized Elephant
 
@@ -420,13 +417,11 @@ planarCleansing = mkCard $ do
 
 serraAngel :: Card
 serraAngel = mkCard $ do
-    name =: Just "Serra Angel"
-    types =: creatureTypes [Angel]
-    pt =: Just (4, 4)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Nothing, Nothing, Just White, Just White]
-    }
-    staticKeywordAbilities =: [Flying, Vigilance]
+  name =: Just "Serra Angel"
+  types =: creatureTypes [Angel]
+  pt =: Just (4, 4)
+  play =: Just playObject { manaCost = Just $ replicate 3 Nothing ++ [Just White, Just White] }
+  staticKeywordAbilities =: [Flying, Vigilance]
 
 -- Serra Avatar
 
@@ -455,12 +450,10 @@ showOfValor = mkCard $ do
 
 silvercoatLion :: Card
 silvercoatLion = mkCard $ do
-    name =: Just "Silvercoat Lion"
-    types =: creatureTypes [Cat]
-    pt =: Just (2, 2)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Just White]
-    }
+  name =: Just "Silvercoat Lion"
+  types =: creatureTypes [Cat]
+  pt =: Just (2, 2)
+  play =: Just playObject { manaCost = Just [Nothing, Just White] }
 
 -- Sublime Archangel
 
@@ -514,13 +507,13 @@ warPriestOfThune = mkCard $ do
 
 divination :: Card
 divination = mkCard $ do
-    name =: Just "Divination"
-    types =: sorceryType
-    play =: Just playObject
-      { manaCost = Just [Nothing, Nothing, Just Blue]
-      , effect = stackSelf $ \_ stackYou ->
-          void $ executeEffects $ replicate 2 (Will (DrawCard stackYou))
-      }
+  name =: Just "Divination"
+  types =: sorceryType
+  play =: Just playObject
+    { manaCost = Just [Nothing, Nothing, Just Blue]
+    , effect = stackSelf $ \_ stackYou ->
+        void $ executeEffects $ replicate 2 (Will (DrawCard stackYou))
+    }
 
 downpour :: Card
 downpour = mkCard $ do
@@ -542,11 +535,10 @@ downpour = mkCard $ do
 
 faerieInvaders :: Card
 faerieInvaders = mkCard $ do
-    name =: Just "Faerie Invaders"
-    types =: creatureTypes [Faerie, Rogue]
-    staticKeywordAbilities =: [Flash]
-    play =: Just playObject
-      { manaCost = Just $ replicate 4 Nothing ++ [Just Blue] }
+  name =: Just "Faerie Invaders"
+  types =: creatureTypes [Faerie, Rogue]
+  staticKeywordAbilities =: [Flash]
+  play =: Just playObject { manaCost = Just $ replicate 4 Nothing ++ [Just Blue] }
 
 -- Fog Bank
 
@@ -659,8 +651,7 @@ cripplingBlight = mkCard $ do
   types =: auraType
   staticKeywordAbilities =: [EnchantPermanent creatureType]
   layeredEffects =: [boostEnchanted]
-  play =: Just playObject
-    { manaCost = Just [Just Black] }
+  play =: Just playObject { manaCost = Just [Just Black] }
   where
     boostEnchanted = LayeredObjectEffect
       { affectedObjects = affectAttached
@@ -671,8 +662,7 @@ darkFavor :: Card
 darkFavor = mkCard $ do
     name =: Just "Dark Favor"
     types =: auraType
-    play =: Just playObject
-      { manaCost = Just [Nothing, Just Black] }
+    play =: Just playObject { manaCost = Just [Nothing, Just Black] }
     triggeredAbilities =: loseLifeTrigger
     layeredEffects =: [darkFavorEffect]
   where
