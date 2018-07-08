@@ -540,6 +540,27 @@ faerieInvaders = mkCard $ do
 -- Harbor Serpent
 
 -- Hydrosurge
+hydrosurge :: Card
+hydrosurge = mkCard $ do
+    name =: Just "Hydrosurge"
+    types =: instantType
+    play =: Just playObject
+      { manaCost = Just [Just Blue]
+      , effect = hydrosurgeEffect
+      }
+  where
+    hydrosurgeEffect rSelf you = do
+      ts <- askTarget you targetCreature
+      mkTargetTrigger you ts $ \(Battlefield, i) -> do
+        t <- tick
+        will $
+          InstallLayeredEffect (Some Battlefield, i) TemporaryLayeredEffect
+            { temporaryTimestamp = t
+            , temporaryDuration  = UntilEndOfTurn
+            , temporaryEffect    = affectingSelf
+                [ModifyPT (\_ -> return (-5, 0))]
+            }
+
 
 -- Index
 
