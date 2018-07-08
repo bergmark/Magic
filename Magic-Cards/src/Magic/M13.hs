@@ -29,6 +29,10 @@ import Data.Traversable (traverse)
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
 {-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
 
+-- MARKING UNFINISHED CARDS
+
+data Incomplete a = Incomplete a
+
 -- COMMON ABILITIES
 
 
@@ -51,6 +55,7 @@ exalted _ _ _ = return []
 
 -- WHITE CARDS
 
+-- Ajani, Caller of the Pride
 
 ajani'sSunstriker :: Card
 ajani'sSunstriker = mkCard $ do
@@ -222,6 +227,20 @@ divineFavor = mkCard $ do
       , objectModifications = [ModifyPT (\_ -> return (1, 3))]
       }
 
+divineVerdict :: Incomplete Card
+divineVerdict = Incomplete . mkCard $ do
+  name =: Just "Divine Verdict"
+  types =: instantType
+  play =: Just playObject
+    { manaCost = Just [Nothing, Nothing, Nothing, Just White]
+    , effect = divineVerdictEffect
+    }
+  where
+    divineVerdictEffect :: Contextual (Magic ())
+    divineVerdictEffect =
+      undefined
+      -- TODO: Destroy target attacking or blocking creature.
+
 erase :: Card
 erase = mkCard $ do
     name =: Just "Erase"
@@ -237,6 +256,47 @@ erase = mkCard $ do
       stackTargetSelf rSelf you ts $ \t _ _ -> do
         ench <- view (asks (objectPart . object t))
         void . executeEffect $ willMoveToExile t ench
+
+faith'sReward :: Incomplete Card
+faith'sReward = Incomplete . mkCard $ do
+  name =: Just "Faith's Reward"
+  types =: instantType
+  play =: Just playObject
+    { manaCost = Just [Nothing, Nothing, Nothing, Just White]
+    , effect = faith'sRewardEffect
+    }
+  where
+    faith'sRewardEffect :: Contextual (Magic ())
+    faith'sRewardEffect =
+      undefined
+      -- TODO: Return to the battlefield all permanent cards in your
+      -- graveyard that were put there from the battlefield this turn.
+
+gloriousCharge :: Incomplete Card
+gloriousCharge = Incomplete . mkCard $ do
+  name =: Just "Glorious Charge"
+  types =: instantType
+  play =: Just playObject
+    { manaCost = Just [Nothing, Just White]
+    , effect = gloriousChargeEffect
+    }
+  where
+    gloriousChargeEffect :: Contextual (Magic ())
+    gloriousChargeEffect = undefined
+    -- TODO: Creatures you control get +1/+1 until end of turn
+
+griffinProtector :: Card
+griffinProtector = mkCard $ do
+  name =: Just "Griffin Protector"
+  types =: creatureTypes [Griffin]
+  staticKeywordAbilities =: [Flying]
+  triggeredAbilities =: tempPlus1Trigger
+  pt =: Just (2, 3)
+  play =: Just playObject { manaCost = Just [Nothing, Nothing, Nothing, Just White] }
+  where
+    tempPlus1Trigger = undefined
+    -- Whenever another creature enters the battlefield under your
+    -- control, Griffin Protector gets +1/+1 until end of turn.
 
 guardianLions :: Card
 guardianLions = mkCard $ do
@@ -281,6 +341,38 @@ healerOfThePride = mkCard $ do
         | DidMoveObject _ (Some Battlefield, i) <- events ]
     gainLifeTrigger _ _ _ = return []
 
+intrepidHero :: Incomplete Card
+intrepidHero = Incomplete . mkCard $ do
+  name =: Just "Intrepid Hero"
+  types =: creatureTypes [Human, Soldier]
+  pt =: Just (1, 1)
+  play =: Just playObject { manaCost = Just [Nothing, Nothing, Just White] }
+  activatedAbilities =: [intrepidHeroAbility]
+  where
+    intrepidHeroAbility = ActivatedAbility
+      { abilityType = ActivatedAb
+      , tapCost = TapCost
+      , abilityActivation = defaultActivation
+        { effect = destroyGte4Creature
+        }
+      }
+    destroyGte4Creature :: Contextual (Magic ())
+    destroyGte4Creature rSelf you = undefined
+    -- TODO: Destroy target creature with power 4 or greater.
+
+knightOfGlory :: Incomplete Card
+knightOfGlory = Incomplete . mkCard $ do
+  name =: Just "Knight of Glory"
+  types =: creatureTypes [Human, Knight]
+  pt =: Just (2, 1)
+  play =: Just playObject { manaCost = Just [Nothing, Just White] }
+  triggeredAbilities =: exalted
+  -- TODO: Protection from black
+
+-- Oblivion Ring
+
+-- Odric, Master Tactician
+
 pacifism :: Card
 pacifism = mkCard $ do
     name =: Just "Pacifism"
@@ -294,6 +386,15 @@ pacifism = mkCard $ do
       , objectModifications = [ RestrictAllowAttacks selfCantAttack
                         , RestrictAllowBlocks  selfCantBlock ]
       }
+
+pillarfieldOx :: Card
+pillarfieldOx = mkCard $ do
+    name =: Just "Pillarfield Ox"
+    types =: creatureTypes [Ox]
+    pt =: Just (2, 4)
+    play =: Just playObject {
+        manaCost = Just [Nothing, Nothing, Nothing, Just White]
+    }
 
 planarCleansing :: Card
 planarCleansing = mkCard $ do
@@ -309,14 +410,13 @@ planarCleansing = mkCard $ do
         let destructionEffects = map (`DestroyPermanent` true) objectRefs
         void $ executeEffects $ map Will destructionEffects
 
-pillarfieldOx :: Card
-pillarfieldOx = mkCard $ do
-    name =: Just "Pillarfield Ox"
-    types =: creatureTypes [Ox]
-    pt =: Just (2, 4)
-    play =: Just playObject {
-        manaCost = Just [Nothing, Nothing, Nothing, Just White]
-    }
+-- Prized Elephant
+
+-- Rain of Blades
+
+-- Rhox Faithmender
+
+-- Safe Passage
 
 serraAngel :: Card
 serraAngel = mkCard $ do
@@ -328,14 +428,9 @@ serraAngel = mkCard $ do
     }
     staticKeywordAbilities =: [Flying, Vigilance]
 
-silvercoatLion :: Card
-silvercoatLion = mkCard $ do
-    name =: Just "Silvercoat Lion"
-    types =: creatureTypes [Cat]
-    pt =: Just (2, 2)
-    play =: Just playObject {
-      manaCost = Just [Nothing, Just White]
-    }
+-- Serra Avatar
+
+-- Serra Avenger
 
 showOfValor :: Card
 showOfValor = mkCard $ do
@@ -358,10 +453,23 @@ showOfValor = mkCard $ do
                 [ModifyPT (\_ -> return (2, 4))]
             }
 
+silvercoatLion :: Card
+silvercoatLion = mkCard $ do
+    name =: Just "Silvercoat Lion"
+    types =: creatureTypes [Cat]
+    pt =: Just (2, 2)
+    play =: Just playObject {
+      manaCost = Just [Nothing, Just White]
+    }
+
+-- Sublime Archangel
+
+-- Touch of the Eternal
+
 warFalcon :: Card
 warFalcon = mkCard $ do
     name =: Just "War Falcon"
-    types =: creatureTypes[Bird]
+    types =: creatureTypes [Bird]
     pt =: Just (2, 1)
     staticKeywordAbilities =: [Flying]
     play =: Just playObject { manaCost = Just [Just White] }
@@ -388,8 +496,21 @@ warPriestOfThune = mkCard $ do
         shouldDestroy <- askYesNo you "Destroy target enchantment?"
         when shouldDestroy $ will (DestroyPermanent ref True)
 
+-- Warclamp Mastiff
 
 -- BLUE
+
+-- Archaeomancer
+
+-- Arctic Raven
+
+-- Augur of Bolas
+
+-- Battle of Wits
+
+-- Clone
+
+-- Courtly Provocateur
 
 divination :: Card
 divination = mkCard $ do
@@ -415,6 +536,10 @@ downpour = mkCard $ do
       stackTargetSelf rSelf rYou ts $ \t _stackSelf _stackYou ->
         void. executeEffects $ map (Will . TapPermanent) t
 
+-- Encrust
+
+-- Essence Scatter
+
 faerieInvaders :: Card
 faerieInvaders = mkCard $ do
     name =: Just "Faerie Invaders"
@@ -422,6 +547,24 @@ faerieInvaders = mkCard $ do
     staticKeywordAbilities =: [Flash]
     play =: Just playObject
       { manaCost = Just $ replicate 4 Nothing ++ [Just Blue] }
+
+-- Fog Bank
+
+-- Harbor Serpent
+
+-- Hydrosurge
+
+-- Index
+
+-- Jace, Memory Adept
+
+-- Jace's Phantasm
+
+-- Kraken Hatchling
+
+-- Master of the Pearl Trident
+
+-- Merfolk of the Pearl Trident
 
 mindSculpt :: Card
 mindSculpt = mkCard $ do
@@ -439,6 +582,28 @@ mindSculpt = mkCard $ do
         cards <- IdList.toList <$> view (asks (library . player p))
         moveCards (take 7 cards) (Library p) (Graveyard p)
 
+-- Negate
+
+-- Omniscience
+
+-- Redirect
+
+-- Rewind
+
+-- Scroll Thief
+
+-- Sleep
+
+-- Spelltwine
+
+-- Stormtide Leviathan
+
+-- Switcheroo
+
+-- Talrand, Sky Summoner
+
+-- Talrand's Invocation
+
 tricksOfTheTrade :: Card
 tricksOfTheTrade = mkCard $ do
     name =: Just "Tricks of the Trade"
@@ -452,6 +617,24 @@ tricksOfTheTrade = mkCard $ do
       { affectedObjects = affectAttached
       , objectModifications = [ModifyPT (\_ -> return (2, 0)), RestrictAllowBlocks selfCantBeBlocked]
       }
+
+-- Unsummon
+
+-- Vedalken Entrancer
+
+-- Void Stalker
+
+-- Watercourser
+
+-- Welkin Tern
+
+windDrake :: Card
+windDrake = mkCard $ do
+  name =: Just "Wind Drake"
+  types =: creatureTypes [Drake]
+  staticKeywordAbilities =: [Flying]
+  pt =: Just (2, 2)
+  play =: Just playObject { manaCost = Just [Nothing, Nothing, Just Blue] }
 
 
 -- BLACK CARDS
