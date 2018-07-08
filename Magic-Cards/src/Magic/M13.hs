@@ -485,6 +485,7 @@ warPriestOfThune = mkCard $ do
 
 -- Warclamp Mastiff
 
+
 -- BLUE
 
 -- Archaeomancer
