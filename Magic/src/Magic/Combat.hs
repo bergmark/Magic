@@ -41,7 +41,7 @@ selfCantBlock _ _ _ = true
 -- | Only allow the blocks if this creature is not part of the blocking creatures or if at least one other creature is blocking.
 selfCantBlockAlone :: [Block] -> Contextual (View Bool)
 selfCantBlockAlone bls (Some Battlefield, i) _ =
-    return (i `notElem` blockerIds || not (null (filter (/= i) blockerIds)))
+    return (i `notElem` blockerIds || any (/= i) blockerIds)
   where
     blockerIds = nub (map (snd . blocker) bls)
 

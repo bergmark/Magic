@@ -58,7 +58,7 @@ fromList :: [a] -> IdList a
 fromList = foldr (\x xs -> snd (snoc' (const x) xs)) empty
 
 fromListWithId :: (Id -> a -> b) -> [a] -> IdList b
-fromListWithId f = foldr (\x xs -> snd (snoc' (\i -> f i x) xs)) empty
+fromListWithId f = foldr (\x xs -> snd (snoc' (`f` x) xs)) empty
 
 
 

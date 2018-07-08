@@ -145,7 +145,7 @@ playTiming rSelf you = do
     checkTimingRestrictions :: Object -> View Bool
     checkTimingRestrictions self =
       if Flash `elem` get staticKeywordAbilities self ||
-         instantType `isObjectTypesSubsetOf` (get types self)
+         instantType `isObjectTypesSubsetOf` get types self
         then instantSpeed rSelf you
         else sorcerySpeed rSelf you
 

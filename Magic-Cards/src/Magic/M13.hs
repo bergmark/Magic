@@ -14,6 +14,7 @@ import Control.Arrow (first)
 import Control.Category ((.))
 import Control.Monad (void, when)
 import Data.Boolean (notB, true, (&&*), (||*))
+import Data.Foldable (traverse_)
 import qualified Data.Foldable as Foldable
 import Data.Label (get)
 import Data.Label.Monadic ((=:), asks)
@@ -25,6 +26,8 @@ import qualified Data.Text as Text
 import Prelude hiding ((.))
 import Data.Traversable (traverse)
 
+{-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
+{-# ANN module ("HLint: ignore Reduce duplication" :: String) #-}
 
 -- COMMON ABILITIES
 
@@ -197,7 +200,7 @@ crusaderOfOdric = mkCard $ do
       { affectedObjects = affectSelf
       , objectModifications = [DefinePT ( \rSelf ->
         do
-          cards <- (map (get objectPart) . IdList.elems) <$> view (asks (battlefield))
+          cards <- map (get objectPart) . IdList.elems <$> view (asks battlefield)
           you <- view (asks (controller . objectBase rSelf))
           let c = length $ filter (isControlledBy you &&* hasTypes creatureType) cards
           return (c, c))]
@@ -301,9 +304,9 @@ planarCleansing = mkCard $ do
    where
      destroyAllPermanents :: ObjectRef 'TyStackItem -> PlayerRef -> Magic ()
      destroyAllPermanents _ _ = do
-        objects <- IdList.toList <$> view (asks (battlefield))
+        objects <- IdList.toList <$> view (asks battlefield)
         let objectRefs = map (\pair -> (Battlefield, fst pair)) $ filter (not . hasTypes landType . get objectPart . snd) objects
-        let destructionEffects = map (\objectRef -> DestroyPermanent objectRef true) objectRefs
+        let destructionEffects = map (`DestroyPermanent` true) objectRefs
         void $ executeEffects $ map Will destructionEffects
 
 pillarfieldOx :: Card
@@ -366,7 +369,7 @@ warFalcon = mkCard $ do
   where
     controlsKnightOrSoldier :: [Attack] -> Contextual (View Bool)
     controlsKnightOrSoldier ats (Some Battlefield, i) p = do
-        cards <- (map (get objectPart) . IdList.elems) <$> view (asks (battlefield))
+        cards <- map (get objectPart) . IdList.elems <$> view (asks battlefield)
         let ok = isControlledBy p &&* (hasTypes (creatureTypes [Knight]) ||* hasTypes (creatureTypes [Soldier]))
         return $ (Battlefield, i) `notElem` map attacker ats || any ok cards
     controlsKnightOrSoldier _ _ _ = true
@@ -769,7 +772,7 @@ thundermawHellkite = mkCard $ do
       objs <- filter (isAffected . get permanentObject . snd) <$> viewZone Battlefield
       let damage r = DamageObject self r 1 False True
       let damageAndTap r = [Will (damage r), Will (TapPermanent r)]
-      void . executeEffects $ concatMap damageAndTap (map fst objs)
+      void . executeEffects $ concatMap (damageAndTap . fst) objs
 
 
 torchFiend :: Card
@@ -812,7 +815,7 @@ trumpetBlast = mkCard $ do
       let isAttacking = isJust . get attacking
       objs <- map fst . filter (isAttacking . snd) <$> viewZone Battlefield
       t <- tick
-      void $ traverse (\(r, i) -> modifyPTUntilEOT (2, 0) (Some r, i) t) objs
+      traverse_ (\(r, i) -> modifyPTUntilEOT (2, 0) (Some r, i) t) objs
 
 
 -- GREEN CARDS
@@ -909,7 +912,7 @@ elvishArchdruid = mkCard $ do
     layeredEffects =: [boostYourElves]
   where
     addManaAbility = tapAbility $ \_rSelf you -> do
-      cards <- (map (get objectPart) . IdList.elems) <$> view (asks battlefield)
+      cards <- map (get objectPart) . IdList.elems <$> view (asks battlefield)
       let yourElves = filter (isControlledBy you &&* hasTypes (creatureTypes [Elf])) cards
       mkTrigger you $ will $ AddToManaPool you $ replicate (length yourElves) (Just Green)
 
@@ -960,7 +963,7 @@ fungalSprouting = mkCard $ do
       }
   where
     makeTokenEffect = stackSelf $ \_rSelf you -> do
-      perms <- (map (get objectPart) . IdList.elems) <$> view (asks battlefield)
+      perms <- map (get objectPart) . IdList.elems <$> view (asks battlefield)
       t <- tick
       let yours = filter (isControlledBy you &&* hasTypes creatureType) perms
           maxPower = maximum $ 0 : map (maybe 0 fst . get pt) yours
@@ -978,12 +981,12 @@ garrukPrimalHunter = mkCard $ do
     loyalty =: Just 3
     replacementEffects =: [etbWithLoyaltyCounters]
   where
-    plusOne = loyaltyAbility 1 $ \_ you -> do
+    plusOne = loyaltyAbility 1 $ \_ you ->
       mkAbility you $ do
         t <- tick
         let token = simpleCreatureToken t you [Beast] [Green] (3,3)
         void $ executeEffect $ WillMoveObject Nothing Battlefield (Permanent token Untapped 0 False Nothing Nothing)
-    minusThree = loyaltyAbility (-3) $ \_ you -> do
+    minusThree = loyaltyAbility (-3) $ \_ you ->
       mkAbility you $ do
         objs <- IdList.elems <$> view (asks battlefield)
         let n = foldr max 0 [ power
@@ -991,7 +994,7 @@ garrukPrimalHunter = mkCard $ do
                             , get (controller . objectPart) o == you
                             , let Just (power, _) = get (pt . objectPart) o ]
         void $ executeEffects (replicate n (Will (DrawCard you)))
-    minusSix = loyaltyAbility (-6) $ \_ you -> do
+    minusSix = loyaltyAbility (-6) $ \_ you ->
       mkAbility you $ do
         perms <- IdList.elems <$> view (asks battlefield)
         let n = count perms $ \perm ->
@@ -1297,10 +1300,10 @@ checkLand n cols tys = mkCard $ do
 etbTappedUnless :: [ObjectTypes] -> OneShotEffect -> Contextual (Maybe (Magic [OneShotEffect]))
 etbTappedUnless tys e@(WillMoveObject (Just r') Battlefield o) r _
   | r' == r = Just $ do
-                perms <- (map (get objectPart) . IdList.elems) <$>
+                perms <- map (get objectPart) . IdList.elems <$>
                   view (asks battlefield)
                 let p = get (owner . objectPart) o
-                if null (filter (isControlledBy p &&* gor (map hasTypes tys)) perms)
+                if not (any (isControlledBy p &&* gor (map hasTypes tys)) perms)
                 then return [WillMoveObject (Just r') Battlefield o { _tapStatus = Tapped } ]
                 else return [e]
 etbTappedUnless _ _ _ _ = Nothing

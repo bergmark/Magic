@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Magic.Engine.Events (
     -- * Executing effects
@@ -76,7 +77,7 @@ raise source events = do
     prestackItems <- view $ do
       programs <- tas events ro p
       viewedObject <- asks (objectBase ro)
-      return (map (\program -> ((ro, viewedObject), program)) programs)
+      return (map ((ro, viewedObject),) programs)
     prestack . player p =. (++ prestackItems)
 
 executeEffect :: EventSource -> OneShotEffect -> Engine [Event]
@@ -176,7 +177,7 @@ compileEffect e =
           simply $ life . player p =. (+ n)
 
         LoseLife p n -> onlyIf (n >= 0) $
-          simply $ life . player p =. (subtract n)
+          simply $ life . player p =. subtract n
 
         RevealCards _ _ ->
           simply $ return ()

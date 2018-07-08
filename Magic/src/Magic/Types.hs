@@ -88,8 +88,7 @@ import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.Operational (Program, ProgramT)
 import Data.Boolean
-import Data.Label (mkLabels, lens)
-import Data.Label ((:->))
+import Data.Label ((:->), mkLabels, lens)
 import Data.Monoid (Monoid(..))
 import Data.Set (Set)
 import Data.Semigroup (Semigroup (..))
@@ -215,7 +214,7 @@ data Player = Player
 -- OBJECTS
 
 
-data Card = Card
+newtype Card = Card
   -- owner (and controller)
   { instantiateCard :: PlayerRef -> Object
   }
@@ -665,7 +664,7 @@ instance (Monoid a, Monad m) => Monoid (ViewT m a) where
 instance (Monad m, Boolean a) => Boolean (ViewT m a) where
   true  = return true
   false = return false
-  notB  = liftM  notB
+  notB  = fmap  notB
   (&&*) = liftM2 (&&*)
   (||*) = liftM2 (||*)
 
@@ -678,7 +677,7 @@ class MonadView m where
   view :: View a -> m a
 
 instance Monad m => MonadView (ViewT m) where
-  view (ViewT (ReaderT f)) = liftM (runIdentity . f) ask
+  view (ViewT (ReaderT f)) = asks (runIdentity . f)
 
 
 

@@ -1,7 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TupleSections #-}
 
 module Magic.Target (
     -- * Target lists
@@ -46,7 +47,7 @@ askTarget' :: PlayerRef -> (a -> b -> c) -> (a -> b -> View Bool) -> TargetList 
 askTarget' p combine test2 ts (TargetSpec cast test) = do
   let (_, Just a) = evaluateTargetList ts
   ats <- allTargets
-  eligibleTargets <- view $ flip filterM ats $ \t -> do
+  eligibleTargets <- view $ flip filterM ats $ \t ->
     case cast t of
       Just b -> test b &&* test2 a b
       Nothing -> false
@@ -85,7 +86,7 @@ allTargets = do
             concat [ [Some (Library p), Some (Hand p), Some (Graveyard p)] | p <- ps ]
   oss <- forM szrs $ \(Some zr) -> do
     os <- IdList.ids <$> view (asks (compileZoneRef zr))
-    return (map (\o -> (Some zr, o)) os)
+    return (map (Some zr,) os)
   return (map PlayerRef ps ++ map ObjectRef (concat oss))
 
 evaluateTargetList :: TargetList a -> ([EntityRef], Maybe a)

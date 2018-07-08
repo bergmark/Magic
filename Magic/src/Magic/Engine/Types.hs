@@ -88,6 +88,7 @@ applyLayeredEffects = do
 
     applyOne :: [SomeObjectRef] -> ModifyObject -> World -> World
     applyOne rs m world = foldr (.) id (map (\r -> modify (objectBase r) (compileModifyObject world m r)) rs) world
+{-# ANN applyLayeredEffects "HLint: ignore Fuse foldr/map" #-}
 
 compileModifyObject :: World -> ModifyObject -> SomeObjectRef -> Object -> Object
 compileModifyObject world m rSelf =

@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DoAndIfThenElse #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE DataKinds #-}
@@ -50,7 +49,7 @@ newWorld decks = World
     , _turnHistory   = []
     }
   where
-    ps = IdList.fromListWithId (\i deck -> newPlayer i deck) decks
+    ps = IdList.fromListWithId newPlayer decks
     playerIds = IdList.ids ps
     ts = case playerIds of
           -- 103.7a. In a two-player game, the player who plays first skips the draw step of his or her first turn.
@@ -148,11 +147,11 @@ executeStep (BeginningPhase UntapStep) = do
 
   -- [502.2] untap permanents
   rp <- gets activePlayer
-  ios <- (IdList.filter (\perm@Permanent {} -> isControlledBy rp (get objectPart perm))) <$> gets battlefield
+  ios <- IdList.filter (\perm@Permanent {} -> isControlledBy rp (get objectPart perm)) <$> gets battlefield
   _ <- executeEffects TurnBasedActions (map (\(i, _) -> Will (UntapPermanent (Battlefield, i))) ios)
   return ()
 
-executeStep (BeginningPhase UpkeepStep) = do
+executeStep (BeginningPhase UpkeepStep) =
   -- TODO [503.1]  handle triggers
 
   -- [503.2]
@@ -168,13 +167,13 @@ executeStep (BeginningPhase DrawStep) = do
   -- [504.3]
   offerPriority
 
-executeStep MainPhase = do
+executeStep MainPhase =
   -- TODO [505.4]  handle triggers
 
   -- [505.5]
   offerPriority
 
-executeStep (CombatPhase BeginningOfCombatStep) = do
+executeStep (CombatPhase BeginningOfCombatStep) =
   offerPriority
 
 executeStep (CombatPhase DeclareAttackersStep) = do
@@ -188,7 +187,7 @@ executeStep (CombatPhase DeclareAttackersStep) = do
         (isControlledBy ap &&* hasTypes creatureType) (get objectPart perm)
         && get tapStatus perm == Untapped
   possibleAttackerRefs <- map (\(i,_) -> (Battlefield, i)) . filter (canAttack . snd) . IdList.toList <$> view (asks battlefield)
-  attackablePlayerRefs <- (filter (/= ap) . IdList.ids) <$> gets players
+  attackablePlayerRefs <- filter (/= ap) . IdList.ids <$> gets players
   attacks <- askQuestion ap (AskAttackers possibleAttackerRefs (map PlayerRef attackablePlayerRefs))
 
   -- TODO [508.1c] check attacking restrictions
@@ -198,7 +197,7 @@ executeStep (CombatPhase DeclareAttackersStep) = do
   -- [508.1f] tap attackers
   forM_ attacks $ \(Attack rAttacker _rAttackee) -> do
     keywords <- view (asks (staticKeywordAbilities . objectPart . object rAttacker))
-    unless (elem Vigilance keywords) $
+    unless (Vigilance `elem` keywords) $
         tapStatus . object rAttacker =: Tapped
   -- TODO [508.1g] determine costs
   -- TODO [508.1h] allow mana abilities
@@ -259,9 +258,9 @@ executeStep (CombatPhase EndOfCombatStep) = do
   -- [511.3]  remove creatures from combat
   battlefield =.* set attacking Nothing
 
-executeStep (EndPhase EndOfTurnStep) = do
+executeStep (EndPhase EndOfTurnStep) =
   -- TODO [513.1]  handle triggers
-  
+
   -- [513.2]
   offerPriority
 
@@ -316,7 +315,7 @@ executeSBAsAndProcessPrestacks = untilFalse ((||) <$> checkSBAs <*> processPrest
 -- | Repeatedly checks and executes state-based effects until no more actions need to be taken.
 --   Returns whether any actions were taken at all.
 checkSBAs :: Engine Bool
-checkSBAs = untilFalse $ (not . null) <$> checkSBAsOnce
+checkSBAs = untilFalse $ not . null <$> checkSBAsOnce
   where
     checkSBAsOnce = collectSBAs >>= executeEffects StateBasedActions
 
@@ -325,9 +324,9 @@ checkSBAs = untilFalse $ (not . null) <$> checkSBAsOnce
 processPrestacks :: Engine Bool
 processPrestacks = do
   ips <- apnap
-  liftM or $ for ips $ \(i,p) -> do
+  fmap or $ for ips $ \(i,p) -> do
     let pending = get prestack p
-    when (not (null pending)) $ do
+    unless (null pending) $ do
       index <- askQuestion i (AskPickTrigger (map fst pending))
       let (lki, program) = pending !! index
       executeMagic (StackTrigger lki) program
@@ -358,7 +357,7 @@ collectSBAs = view $ execWriterT $ do
       -- TODO [704.5c]
       -- TODO [704.5t]
       ips <- IdList.toList <$> lift (asks players)
-      forM_ ips $ \(i,p) -> do
+      forM_ ips $ \(i,p) ->
         when (get life p <= 0 || get failedCardDraw p) $
           tell [Will (LoseGame i)]
 
@@ -403,7 +402,7 @@ resolve r@(Stack, i) = do
   executeMagic eventSource (mkEffects r (get controller o))
 
   -- if the object is now still on the stack, move it to the appropriate zone
-  if (hasTypes instantType o || hasTypes sorceryType o)
+  if hasTypes instantType o || hasTypes sorceryType o
   then void $ executeEffect eventSource $
     WillMoveObject (Just (Some Stack, i)) (Graveyard (get controller o)) (CardObject o)
   else if hasPermanentType o
@@ -420,8 +419,8 @@ collectPriorityActions p = do
 collectAvailableActivatedAbilities :: (ActivatedAbility -> Bool) -> PlayerRef -> Engine [ActivatedAbilityRef]
 collectAvailableActivatedAbilities predicate p = do
   objects <- view allObjects
-  execWriterT $ do
-    for objects $ \(r,o) -> do
+  execWriterT $
+    for objects $ \(r,o) ->
       for (zip [0..] (get activatedAbilities o)) $ \(i, ability) -> do
         ok <- lift (shouldOfferActivation (abilityActivation ability) r p)
         payCostsOk <- lift (canPayTapCost (tapCost ability) r p)
@@ -430,8 +429,8 @@ collectAvailableActivatedAbilities predicate p = do
 collectPlayableCards :: PlayerRef -> Engine [ObjectRef TyCard]
 collectPlayableCards p = do
   objects <- view allCards
-  execWriterT $ do
-    forM_ objects $ \(r,o) -> do
+  execWriterT $
+    forM_ objects $ \(r,o) ->
       case get play o of
         Just playAbility -> do
           ok <- lift (shouldOfferActivation playAbility (someObjectRef r) p)
@@ -449,7 +448,7 @@ activate source activation rSource rActivator  = do
   executeMagic source (effect activation rSource rActivator)
 
 executePriorityAction :: PlayerRef -> PriorityAction -> Engine ()
-executePriorityAction p a = do
+executePriorityAction p a =
   case a of
     PlayCard r -> do
       Just ability <- gets (play . objectPart . object r)

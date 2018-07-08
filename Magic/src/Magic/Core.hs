@@ -119,7 +119,7 @@ viewObject (zr, i) = IdList.get i <$> asks (compileZoneRef zr)
 
 viewSomeObject :: SomeObjectRef -> View (Maybe Object)
 viewSomeObject (Some zr, i) =
-  (fmap (get objectPart) . IdList.get i) <$> asks (compileZoneRef zr)
+  fmap (get objectPart) . IdList.get i <$> asks (compileZoneRef zr)
 
 allRefsInSomeZone :: Some ZoneRef -> View [SomeObjectRef]
 allRefsInSomeZone szr@(Some zr) = map (szr, ) . IdList.ids <$> view (asks (compileZoneRef zr))
@@ -128,4 +128,3 @@ playerHand :: PlayerRef -> Magic [(ObjectRef TyCard, ObjectOfType TyCard)]
 playerHand p = do
   cards <- IdList.toList <$> view (asks (hand . player p))
   return $ map (first (Hand p,)) cards
-

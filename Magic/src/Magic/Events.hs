@@ -121,7 +121,7 @@ askChooseCards n p cards = doChoose n cards []
     doChoose i choices res = do
       maybeChoice <- askChooseCard p choices
       case maybeChoice of
-        Just (choice@(chRef, _)) ->
+        Just choice@(chRef, _) ->
           doChoose (i-1) (deleteBy ((chRef ==) . fst) choices) (choice:res)
         Nothing -> return res
 
