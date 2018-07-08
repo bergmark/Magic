@@ -568,7 +568,12 @@ hydrosurge = mkCard $ do
 
 -- Jace's Phantasm
 
--- Kraken Hatchling
+krakenHatchling :: Card
+krakenHatchling = mkCard $ do
+  name =: Just "Kraken Hatchling"
+  types =: creatureTypes [Kraken]
+  play =: Just playObject { manaCost = Just [Just Blue] }
+  pt =: Just (0, 4)
 
 -- Master of the Pearl Trident
 
