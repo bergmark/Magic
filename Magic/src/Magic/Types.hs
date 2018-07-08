@@ -92,6 +92,7 @@ import Data.Label (mkLabels, lens)
 import Data.Label ((:->))
 import Data.Monoid (Monoid(..))
 import Data.Set (Set)
+import Data.Semigroup (Semigroup (..))
 import Data.Text (Text, unpack)
 import Data.Type.Equality (TestEquality(..), (:~:)(..))
 import Prelude hiding (interact)
@@ -337,9 +338,8 @@ data ObjectTypes = ObjectTypes
   , sorcerySubtypes      :: Maybe (Set SpellSubtype)
   } deriving (Eq, Ord, Show, Read)
 
-instance Monoid ObjectTypes where
-  mempty = ObjectTypes mempty mempty mempty mempty mempty mempty mempty mempty
-  x  `mappend` y = ObjectTypes
+instance Semigroup ObjectTypes where
+  x <> y = ObjectTypes
     { supertypes           = supertypes x           `mappend` supertypes y
     , artifactSubtypes     = artifactSubtypes x     `mappend` artifactSubtypes y
     , creatureSubtypes     = creatureSubtypes x     `mappend` creatureSubtypes y
@@ -349,6 +349,10 @@ instance Monoid ObjectTypes where
     , planeswalkerSubtypes = planeswalkerSubtypes x `mappend` planeswalkerSubtypes y
     , sorcerySubtypes      = sorcerySubtypes x      `mappend` sorcerySubtypes y
     }
+
+instance Monoid ObjectTypes where
+  mempty = ObjectTypes mempty mempty mempty mempty mempty mempty mempty mempty
+  mappend = (<>)
 
 data Supertype = Basic | Legendary
   deriving (Eq, Ord, Show, Read, Enum, Bounded)
@@ -398,7 +402,7 @@ data LandSubtype = Plains | Island | Swamp | Mountain | Forest | Locus
   deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
 data PlaneswalkerSubtype = Chandra | Elspeth | Garruk | Gideon | Jace
-  | Koth | Liliana | Sorin | Tezzeret | Venser | Karn 
+  | Koth | Liliana | Sorin | Tezzeret | Venser | Karn
   deriving (Eq, Ord, Show, Read, Enum, Bounded)
 
 
@@ -633,9 +637,12 @@ instance Applicative TargetList where
       test' (_, y) = test y
       g' (ab, y)   = ab (g y)
 
+instance Semigroup a => Semigroup (TargetList a) where
+  (<>) = liftA2 (<>)
+
 instance Monoid a => Monoid (TargetList a) where
   mempty  = pure mempty
-  mappend = liftA2 mappend
+  mappend = (<>)
 
 instance Show (TargetList a) where
   show _ = "<target list>"
@@ -648,9 +655,12 @@ instance Show (TargetList a) where
 newtype ViewT m a = ViewT { runViewT :: ReaderT World m a }
   deriving (Functor, Applicative, Monad, MonadReader World, MonadTrans)
 
+instance (Semigroup a, Monad m) => Semigroup (ViewT m a) where
+  ViewT x <> ViewT y = ViewT (liftM2 (<>) x y)
+
 instance (Monoid a, Monad m) => Monoid (ViewT m a) where
   mempty = return mempty
-  ViewT x `mappend` ViewT y = ViewT (liftM2 mappend x y)
+  mappend = (<>)
 
 instance (Monad m, Boolean a) => Boolean (ViewT m a) where
   true  = return true
@@ -734,9 +744,12 @@ instance MonadView Magic where
 instance MonadInteract Magic where
   interact = Magic . lift . lift
 
+instance Semigroup a => Semigroup (Magic a) where
+  (<>) = liftM2 (<>)
+
 instance Monoid a => Monoid (Magic a) where
   mempty  = return mempty
-  mappend = liftM2 mappend
+  mappend = (<>)
 
 
 mkLabels [''World, ''Player, ''Object]

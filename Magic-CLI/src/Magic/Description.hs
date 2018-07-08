@@ -19,7 +19,8 @@ import Data.Foldable (foldMap)
 import Data.Label (get)
 import Data.List (sort)
 import Data.Maybe (catMaybes)
-import Data.Monoid (Monoid(..), (<>), mempty)
+import Data.Monoid (Monoid(..))
+import Data.Semigroup (Semigroup (..))
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.String (IsString(..))
@@ -36,9 +37,12 @@ newtype Description = Description { runDescription :: View Text }
 instance IsString Description where
   fromString = Description . return . pack
 
+instance Semigroup Description where
+  Description x <> Description y = Description ((<>) <$> x <*> y)
+
 instance Monoid Description where
   mempty = Description (return mempty)
-  Description x `mappend` Description y = Description (mappend <$> x <*> y)
+  mappend = (<>)
 
 text :: Text -> Description
 text = Description . return
